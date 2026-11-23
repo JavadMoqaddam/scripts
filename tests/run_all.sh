@@ -1,13 +1,88 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env bash
+# =============================================================================
+# run_all.sh - Master unit test runner for PasarGuard test suites
+# =============================================================================
+set -u
 
-export DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-"${DIR}/unit_backup_dump_flags.sh"
-"${DIR}/unit_backup_parse_args.sh"
-"${DIR}/unit_backup_perform.sh"
-"${DIR}/unit_mysql_credentials.sh"
-"${DIR}/unit_backup_mysqldump_defaults.sh"
-"${DIR}/unit_backup_s3_uri.sh"
-"${DIR}/unit_github_release.sh"
+SUITES=(
+    "unit_lib_common.sh"
+    "unit_lib_env.sh"
+    "unit_lib_github.sh"
+    "unit_lib_system.sh"
+    "unit_pasarguard.sh"
+    "unit_pgnode.sh"
+    "unit_pgnode_service.sh"
+    "unit_restore_archive_safety.sh"
+    "unit_restore_recovery.sh"
+    "unit_backup_metadata.sh"
+    "unit_backup_dump_flags.sh"
+    "unit_compose_templates.sh"
+    "test_script_update_safety.sh"
+)
+
+TOTAL=${#SUITES[@]}
+PASSED=0
+FAILED=0
+FAILED_LIST=()
+
+printf "
+==============================================
+"
+printf "   Running PasarGuard Test Suites (%d total)   
+" "$TOTAL"
+printf "==============================================
+
+"
+
+for suite in "${SUITES[@]}"; do
+    suite_path="$TESTS_DIR/$suite"
+    if [ ! -f "$suite_path" ]; then
+        printf "✖ Suite not found: %s
+
+" "$suite"
+        FAILED=$((FAILED + 1))
+        FAILED_LIST+=("$suite (missing)")
+        continue
+    fi
+
+    printf "▶ Running %s...
+" "$suite"
+    if bash "$suite_path"; then
+        printf "✔ %s passed.
+
+" "$suite"
+        PASSED=$((PASSED + 1))
+    else
+        printf "✖ %s FAILED.
+
+" "$suite"
+        FAILED=$((FAILED + 1))
+        FAILED_LIST+=("$suite")
+    fi
+done
+
+printf "==============================================
+"
+printf "Test Summary: %d passed, %d failed out of %d suites.
+" "$PASSED" "$FAILED" "$TOTAL"
+if [ "$FAILED" -gt 0 ]; then
+    printf "Failed suites:
+"
+    for failed_suite in "${FAILED_LIST[@]}"; do
+        printf "  - %s
+" "$failed_suite"
+    done
+    printf "==============================================
+
+"
+    exit 1
+fi
+
+printf "All unit test suites completed successfully!
+"
+printf "==============================================
+
+"
+exit 0
