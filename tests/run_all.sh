@@ -1,88 +1,12 @@
-#!/usr/bin/env bash
-# =============================================================================
-# run_all.sh - Master unit test runner for PasarGuard test suites
-# =============================================================================
-set -u
+# Us-east-1
+[default]
+region = us-east-1
 
-TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+[profile user1]
+region = us-east-1
+output = json
 
-SUITES=(
-    "unit_lib_common.sh"
-    "unit_lib_env.sh"
-    "unit_lib_github.sh"
-    "unit_lib_system.sh"
-    "unit_pasarguard.sh"
-    "unit_pgnode.sh"
-    "unit_pgnode_service.sh"
-    "unit_restore_archive_safety.sh"
-    "unit_restore_recovery.sh"
-    "unit_backup_metadata.sh"
-    "unit_backup_dump_flags.sh"
-    "unit_compose_templates.sh"
-    "test_script_update_safety.sh"
-)
-
-TOTAL=${#SUITES[@]}
-PASSED=0
-FAILED=0
-FAILED_LIST=()
-
-printf "
-==============================================
-"
-printf "   Running PasarGuard Test Suites (%d total)   
-" "$TOTAL"
-printf "==============================================
-
-"
-
-for suite in "${SUITES[@]}"; do
-    suite_path="$TESTS_DIR/$suite"
-    if [ ! -f "$suite_path" ]; then
-        printf "✖ Suite not found: %s
-
-" "$suite"
-        FAILED=$((FAILED + 1))
-        FAILED_LIST+=("$suite (missing)")
-        continue
-    fi
-
-    printf "▶ Running %s...
-" "$suite"
-    if bash "$suite_path"; then
-        printf "✔ %s passed.
-
-" "$suite"
-        PASSED=$((PASSED + 1))
-    else
-        printf "✖ %s FAILED.
-
-" "$suite"
-        FAILED=$((FAILED + 1))
-        FAILED_LIST+=("$suite")
-    fi
-done
-
-printf "==============================================
-"
-printf "Test Summary: %d passed, %d failed out of %d suites.
-" "$PASSED" "$FAILED" "$TOTAL"
-if [ "$FAILED" -gt 0 ]; then
-    printf "Failed suites:
-"
-    for failed_suite in "${FAILED_LIST[@]}"; do
-        printf "  - %s
-" "$failed_suite"
-    done
-    printf "==============================================
-
-"
-    exit 1
-fi
-
-printf "All unit test suites completed successfully!
-"
-printf "==============================================
-
-"
-exit 0
+# Ap-south-1
+[profile user2]
+region = ap-south-1
+output = text
